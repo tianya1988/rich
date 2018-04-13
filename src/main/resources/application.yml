@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: third-tools-backend
+    cnName: 工具管理子系统
+
+server:
+  port: 9008
+  context-path: /
+
+asset:
+  pageSize: 200000
+  countUrl: http://11.11.110.1:48081/datamanager/api/asset/getipsingledetailcount
+  pageInfoUrl: http://11.11.110.1:48081/datamanager/api/asset/getipsingledetail
+
+security:
+  user:
+    name: admin
+    password: admin
+
+eureka:
+  client:
+    enabled: false
+
+
