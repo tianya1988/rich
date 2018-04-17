@@ -3,21 +3,21 @@ package com.strive.rich.job;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.strive.rich.http.HttpClientUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by developer on 2/27/17.
@@ -27,40 +27,60 @@ public class SynchronizeAssetDataSchedule {
 //    @Autowired
 //    private AssetInfoDao assetInfoDao;
 
-//    @Value("${asset.pageSize}")
-//    private int pageSize;
+    @Value("${result.output}")
+    private String output;
+
+
+    @Value("${gifts.input}")
+    private String giftsInput;
+
+
+    @Value("${weapons.url}")
+    private String url;
+
+    @Value("${connect.proxySwitch}")
+    private boolean proxySwitch;
+
+    @Value("${connect.proxyIp}")
+    private String proxyIp;
+
+    @Value("${connect.proxyPort}")
+    private int proxyPort;
+
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     private static final Logger logger = LoggerFactory.getLogger(SynchronizeAssetDataSchedule.class);
 
-    private HashMap<Integer, Double> initGiftMap = new HashMap<Integer, Double>();
+    private HashMap<String, Double> initGiftMap = new HashMap<String, Double>();
     FileOutputStream outputStream = null;
 
     @Scheduled(fixedRate = 50000)
     public void loadAssetInfo() {
         try {
-            Map<Integer, Double> giftMap = getInitGiftMap();
+            Map<String, Double> giftMap = getInitGiftMap();
 
-            FileInputStream fileInputStream = new FileInputStream(new File("/home/jason/Desktop/rich/chiji.txt"));
+            /*fileInputStream fileInputStream = new FileInputStream(new File("/home/jason/Desktop/rich/chiji.txt"));
             //返回全部内容
             final String schemaString = IOUtils.toString(fileInputStream, "UTF-8");
             JSONArray weaponsArray = JSON.parseArray(schemaString);
             System.out.println(weaponsArray.toJSONString());
-            IOUtils.closeQuietly(fileInputStream);
+            IOUtils.closeQuietly(fileInputStream);*/
 
             double averagePrice = 0;
 
-            for (Object o : weaponsArray) {
+            String[] urls = url.split(",");
 
-                JSONObject weaponsPage = (JSONObject) o;
+            for (String url : urls) {
+                String content = HttpClientUtil.get(url, proxySwitch, proxyIp, proxyPort);
 
+                JSONObject weaponsPage = JSON.parseObject(content);
                 JSONObject data = weaponsPage.getJSONObject("data");
                 JSONArray weaponitems = data.getJSONArray("items");
 
                 for (Object weaponitem : weaponitems) {
                     JSONObject weaponJson = (JSONObject) weaponitem;
-                    Integer id = weaponJson.getInteger("id");
+                    String id = weaponJson.getString("id");
 
                     if (giftMap.containsKey(id)) {
                         Double probability = giftMap.get(id);
@@ -88,32 +108,24 @@ public class SynchronizeAssetDataSchedule {
     private FileOutputStream getInitOutputStream() throws FileNotFoundException {
         if (outputStream == null) {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            outputStream = new FileOutputStream(new File("/home/jason/Desktop/rich/rich-" +
-                    format.format(new Date().getTime()) + ".txt"));
+            outputStream = new FileOutputStream(new File(output + format.format(new Date().getTime()) + ".txt"));
         }
         return outputStream;
     }
 
-    public Map<Integer, Double> getInitGiftMap() {
+    public Map<String, Double> getInitGiftMap() throws IOException {
         if (CollectionUtils.isEmpty(initGiftMap.entrySet())) {
-            initGiftMap.put(756042, 10 * 0.01);
-            initGiftMap.put(756044, 10 * 0.01);
-            initGiftMap.put(756035, 10 * 0.01);
-            initGiftMap.put(756026, 15 * 0.01);
-            initGiftMap.put(756046, 1.3 * 0.01);
-            initGiftMap.put(756037, 5 * 0.01);
-            initGiftMap.put(756027, 4.5 * 0.01);
-            initGiftMap.put(756056, 0.16 * 0.01);
-            initGiftMap.put(756041, 1.3 * 0.01);
-            initGiftMap.put(756047, 0.32 * 0.01);
-            initGiftMap.put(756051, 0.6 * 0.01);
-            initGiftMap.put(756053, 0.32 * 0.01);
-            initGiftMap.put(756049, 2.5 * 0.01);
-            initGiftMap.put(756040, 10 * 0.01);
-            initGiftMap.put(756030, 4.5 * 0.01);
-            initGiftMap.put(756039, 5 * 0.01);
-            initGiftMap.put(756032, 4.5 * 0.01);
-            initGiftMap.put(756029, 15 * 0.01);
+            FileInputStream fileInputStream = new FileInputStream(new File(giftsInput));
+            //返回全部内容
+            final String schemaString = IOUtils.toString(fileInputStream, "UTF-8");
+            JSONObject jsonObject = JSON.parseObject(schemaString);
+
+            IOUtils.closeQuietly(fileInputStream);
+
+            Set<Map.Entry<String, Object>> entries = jsonObject.entrySet();
+            for (Map.Entry<String, Object> entry : entries) {
+                initGiftMap.put(entry.getKey(), Double.parseDouble(entry.getValue().toString()));
+            }
         }
 
         return initGiftMap;

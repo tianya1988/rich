@@ -1,24 +1,28 @@
 spring:
   application:
-    name: third-tools-backend
-    cnName: 工具管理子系统
+    name: rich
+    cnName: 发财致富
 
 server:
   port: 9008
   context-path: /
 
-asset:
-  pageSize: 200000
-  countUrl: http://11.11.110.1:48081/datamanager/api/asset/getipsingledetailcount
-  pageInfoUrl: http://11.11.110.1:48081/datamanager/api/asset/getipsingledetail
+connect:
+  proxySwitch: true
+  proxyIp: 10.22.98.21
+  proxyPort: 8080
 
-security:
-  user:
-    name: admin
-    password: admin
+weapons:
+  url: https://buff.163.com/api/market/goods?game=pubg&page_num=1&category_group=weapons&sort_by=price.desc&_=1523254920175,https://buff.163.com/api/market/goods?game=pubg&page_num=2&category_group=weapons&sort_by=price.desc&_=1523254920178
 
-eureka:
-  client:
-    enabled: false
+result:
+  output: /home/jason/Desktop/rich/rich-
 
+gifts:
+  input: /home/jason/Desktop/rich/gift.json
+
+#security:
+#  user:
+#    name: admin
+#    password: admin
 
